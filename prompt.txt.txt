@@ -1,0 +1,906 @@
+
+
+Me:
+we are going to make a project a basic shape editor and modifier these are tasks it should perform add objects to the picture,
+delete objects from the picture, and
+modify objects in the picture. now ill provide u alayout im working on just hel me where i ask 
+
+Gemini:
+That sounds like a fantastic project! Building a tool to add, delete, and modify shapes is a classic engineering challenge that perfectly bridges user interface design with state management.
+I am locked in and ready when you are. Paste your layout, wireframe description, or current code structure right here, and let me know exactly where you're feeling stuck or what you want to optimize.
+What programming language or framework (e.g., Python, C++, Java, Web Canvas) are you using to build this?
+
+--------------------------------------------------------------------------------
+
+Me:
+thi is the layout its in C #include <stdio.h>
+#include <stdlib.h>
+
+#define WIDTH 80
+#define HEIGHT 24
+
+#define EMPTY '_'
+#define PIXEL '*'
+
+char picture[HEIGHT][WIDTH];
+
+void clearPicture() {
+    /*
+        TODO:
+        Fill the entire 2D array picture with EMPTY character '_'.
+    */
+}
+
+void displayPicture() {
+    /*
+        TODO:
+        Print the 2D picture array row by row.
+    */
+}
+
+void setPixel(int x, int y) {
+    /*
+        TODO:
+        If x and y are inside the canvas,
+        set picture[y][x] to PIXEL character '*'.
+    */
+}
+
+void drawLine(int x1, int y1, int x2, int y2) {
+    /*
+        TODO:
+        Draw a line from (x1, y1) to (x2, y2)
+        using the '*' character.
+    */
+}
+
+void drawRectangle(int x1, int y1, int x2, int y2) {
+    /*
+        TODO:
+        Draw a rectangle using four lines.
+        Top-left corner is (x1, y1).
+        Bottom-right corner is (x2, y2).
+    */
+}
+
+void drawCircle(int cx, int cy, int radius) {
+    /*
+        TODO:
+        Draw a circle with center (cx, cy)
+        and given radius using '*'.
+    */
+}
+
+void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
+    /*
+        TODO:
+        Draw a triangle by joining the three given points.
+    */
+}
+
+int main() {
+    int choice;
+
+    clearPicture();
+
+    printf("2D Graphics Editor
+");
+    printf("Canvas size: %d x %d
+", WIDTH, HEIGHT);
+    printf("Use coordinates x y.
+");
+    printf("x range: 0 to %d
+", WIDTH - 1);
+    printf("y range: 0 to %d
+", HEIGHT - 1);
+
+    while (1) {
+        printf("
+Menu
+");
+        printf("1. Draw Line
+");
+        printf("2. Draw Rectangle
+");
+        printf("3. Draw Circle
+");
+        printf("4. Draw Triangle
+");
+        printf("5. Display Picture
+");
+        printf("0. Exit
+");
+        printf("Enter choice: ");
+
+        scanf("%d", &choice);
+
+        if (choice == 1) {
+            int x1, y1, x2, y2;
+
+            printf("Enter x1 y1 x2 y2: ");
+            scanf("%d %d %d %d", &x1, &y1, &x2, &y2);
+
+            drawLine(x1, y1, x2, y2);
+        }
+        else if (choice == 2) {
+            int x1, y1, x2, y2;
+
+            printf("Enter top-left x y and bottom-right x y: ");
+            scanf("%d %d %d %d", &x1, &y1, &x2, &y2);
+
+            drawRectangle(x1, y1, x2, y2);
+        }
+        else if (choice == 3) {
+            int cx, cy, radius;
+
+            printf("Enter center x y and radius: ");
+            scanf("%d %d %d", &cx, &cy, &radius);
+
+            drawCircle(cx, cy, radius);
+        }
+        else if (choice == 4) {
+            int x1, y1, x2, y2, x3, y3;
+
+            printf("Enter x1 y1 x2 y2 x3 y3: ");
+            scanf("%d %d %d %d %d %d",
+                  &x1, &y1, &x2, &y2, &x3, &y3);
+
+            drawTriangle(x1, y1, x2, y2, x3, y3);
+        }
+        else if (choice == 5) {
+            printf("The picture is:
+");
+            displayPicture();
+        }
+        else if (choice == 0) {
+            printf("Exiting program.
+");
+            break;
+        }
+        else {
+            printf("Invalid choice.
+");
+        }
+    }
+
+    return 0;
+}
+
+Gemini:
+This is an excellent starting skeleton for a terminal-based graphics engine! You've got the coordinate system, the canvas array, and the menu loop perfectly mapped out.
+Before filling in the algorithms, we need to address a critical architectural design choice based on your goals: Adding, Deleting, and Modifying objects.
+
+The "Canvas" vs. "Object" Dilemma
+Right now, your layout is designed for destructive pixel drawing. When you call drawLine, it permanently changes characters in the picture array to *. If you want to delete or modify that line later, your program won't know which * belongs to that line and which belongs to a circle or triangle crossing over it.
+To easily delete or modify objects, the standard practice in graphics engineering is to:
+1. Keep a list/array of Shape structures (representing your objects).
+2. To Add: Add a new shape to the list.
+3. To Delete/Modify: Remove or edit that shape in the list.
+4. To Display: Clear the canvas, loop through your shape list, and draw them all from scratch onto the picture buffer.
+
+Step 1: Core Canvas Utilities
+Let's first fill in your basic foundational canvas functions so you can at least clear, view, and set individual pixels.
+
+void clearPicture() {
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            picture[y][x] = EMPTY;
+        }
+    }
+}
+void displayPicture() {
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            printf("%c", picture[y][x]);
+        }
+        printf("
+"); // Move to the next row
+    }
+}
+void setPixel(int x, int y) {
+    // Array boundary protection is crucial to prevent segmentation faults
+    if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+        picture[y][x] = PIXEL;
+    }
+}
+
+Step 2: How to Handle Deleting and Modifying (The Struct Approach)
+To track objects properly, you can define a custom struct at the top of your code:
+
+typedef enum { LINE, RECTANGLE, CIRCLE, TRIANGLE } ShapeType;
+typedef struct {
+    int id;             // Unique identifier for deleting/modifying
+    ShapeType type;     // What kind of shape it is
+    int x1, y1, x2, y2, x3, y3; // Coordinate points
+    int radius;         // For circles
+} Shape;
+
+Shape database[100];    // Can store up to 100 active shapes
+int shapeCount = 0;     // Keeps track of total active shapes
+
+Every time a user "draws" a shape, instead of writing directly to picture, you create a new Shape element in database, increment shapeCount, and then run a global renderCanvas() function that draws everything from scratch.
+Where would you like to focus next—implementing the pixel-drawing algorithms for lines and circles (like Bresenham's algorithm), or setting up the struct management system so you can handle deleting and modifying first?
+
+--------------------------------------------------------------------------------
+
+Me:
+void clearPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            picture[i][j] = EMPTY;
+        }
+    }
+}
+
+void displayPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            printf("%c", picture[i][j]);
+        }
+        printf("
+");
+    }
+}
+
+void setPixel(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = PIXEL;
+    }
+}
+
+/* Editor Features */
+
+void addObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void deleteObject(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = EMPTY;
+    }
+}
+
+void modifyObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void drawLine(int x1, int y1, int x2, int y2) {
+    /*
+        TODO:
+        Draw a line from (x1, y1) to (x2, y2)
+        using the '*' character.
+    */
+}
+
+void drawRectangle(int x1, int y1, int x2, int y2) {
+    /*
+        TODO:
+        Draw a rectangle using four lines.
+    */
+}
+
+void drawCircle(int cx, int cy, int radius) {
+    /*
+        TODO:
+        Draw a circle with center (cx, cy)
+        and given radius.
+    */
+}
+
+void drawTriangle(int x1, int y1,
+                  int x2, int y2,
+                  int x3, int y3) {
+    /*
+        TODO:
+        Draw a triangle by joining
+        the three given points.
+    */
+} ive done this much check it and im stuck after this hel me to continue
+
+Gemini:
+Your core logic is looking great! Your bounds checking (x >= 0 && x < WIDTH ...) in setPixel and the editor functions is spot on—that will save you from painful segmentation faults down the road.
+By implementing addObject, deleteObject, and modifyObject this way, you've successfully created a pixel-level editor where single characters can be manipulated.
+To move this project forward, we need to accomplish two goals:
+1. Implement the mathematical algorithms to actually draw the lines and rectangles.
+2. Hook up your new editor features into the main() menu loop.
+
+Step 1: Implementing drawLine and drawRectangle
+To draw a line on a grid of text characters, we use a classic graphics algorithm called Bresenham's Line Algorithm. It calculates the closest pixel steps without needing slow floating-point math.
+Once you have a working drawLine, making a rectangle becomes incredibly easy because you can just draw 4 individual lines.
+Replace your placeholder functions with this code:
+
+void drawLine(int x1, int y1, int x2, int y2) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = dx - dy;
+
+    while (1) {
+        setPixel(x1, y1); // Draw the current pixel
+
+        // If we reached the end point, stop
+        if (x1 == x2 && y1 == y2) {
+            break;
+        }
+
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x1 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+void drawRectangle(int x1, int y1, int x2, int y2) {
+    // Top side
+    drawLine(x1, y1, x2, y1);
+    // Bottom side
+    drawLine(x1, y2, x2, y2);
+    // Left side
+    drawLine(x1, y1, x1, y2);
+    // Right side
+    drawLine(x2, y1, x2, y2);
+}
+
+Step 2: Update the Menu in main()
+Now you need to allow users to actually choose your new features (addObject, deleteObject, modifyObject) from the console menu.
+Add options 6, 7, and 8 inside your main() function's while(1) loop:
+
+        // ... (Keep your existing options 1 to 5 here)
+        printf("5. Display Picture
+");
+        printf("6. Add Custom Object (Symbol Pixel)
+");
+        printf("7. Delete Object (Clear Pixel)
+");
+        printf("8. Modify Object (Change Pixel)
+");
+        printf("0. Exit
+");
+        printf("Enter choice: ");
+
+        scanf("%d", &choice);
+
+        if (choice == 1) {
+            // ... your existing line code
+        }
+        // ... (Keep existing choices 2, 3, 4, 5)
+        else if (choice == 6) {
+            int x, y;
+            char symbol;
+            printf("Enter x y and a single character symbol: ");
+            scanf("%d %d %c", &x, &y, &symbol);
+            addObject(x, y, symbol);
+        }
+        else if (choice == 7) {
+            int x, y;
+            printf("Enter x y of the pixel to delete: ");
+            scanf("%d %d", &x, &y);
+            deleteObject(x, y);
+        }
+        else if (choice == 8) {
+            int x, y;
+            char symbol;
+            printf("Enter x y and the new character symbol: ");
+            scanf("%d %d %c", &x, &y, &symbol);
+            modifyObject(x, y, symbol);
+        }
+        else if (choice == 0) {
+            printf("Exiting program.
+");
+            break;
+        }
+        // ... (Keep your trailing else block)
+
+Next Steps
+With these additions, you will be able to draw crisp straight lines, build boxed wireframe rectangles, and drop custom characters onto your grid canvas.
+Would you like to tackle the algorithm for drawing the circle next, or would you prefer to look at how to draw the triangle?
+
+--------------------------------------------------------------------------------
+
+Me:
+ive complted trhe code but looks klike something is wrong in function i can feagure analyse it and fix #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define WIDTH 80
+#define HEIGHT 24
+
+#define EMPTY '_'
+#define PIXEL '*'
+
+char picture[HEIGHT][WIDTH];
+
+void clearPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            picture[i][j] = EMPTY;
+        }
+    }
+}
+
+void displayPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            printf("%c", picture[i][j]);
+        }
+        printf("
+");
+    }
+}
+
+void setPixel(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = PIXEL;
+    }
+}
+
+void addObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void deleteObject(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = EMPTY;
+    }
+}
+
+void modifyObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void drawLine(int x1, int y1, int x2, int y2) {
+
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+
+    int steps = (dx > dy) ? dx : dy;
+
+    float xInc = (float)(x2 - x1) / steps;
+    float yInc = (float)(y2 - y1) / steps;
+
+    float x = x1;
+    float y = y1;
+
+    for(int i = 0; i <= steps; i++) {
+        setPixel((int)x, (int)y);
+        x += xInc;
+        y += yInc;
+    }
+}
+
+void drawRectangle(int x1, int y1, int x2, int y2) {
+
+    drawLine(x1, y1, x2, y1);
+    drawLine(x2, y1, x2, y2);
+
+   
+    drawLine(x2, y2 - 1, x1, y2 - 1);
+
+    drawLine(x1, y2, x1, y1);
+}
+
+void drawCircle(int cx, int cy, int radius) {
+
+    for(int angle = 0; angle < 360; angle += 5) {
+
+        double rad = angle * 3.14159 / 180.0;
+
+        int x = cx + radius * cos(rad);
+
+       
+        int y = cy + (radius - 1) * sin(rad);
+
+        setPixel(x, y);
+    }
+}
+
+void drawTriangle(int x1, int y1,
+                  int x2, int y2,
+                  int x3, int y3) {
+
+    drawLine(x1, y1, x2, y2);
+    drawLine(x2, y2, x3, y3);
+
+   
+    drawLine(x3, y3, x2, y1);
+}
+
+int main() {
+
+    int choice;
+
+    clearPicture();
+
+    while(1) {
+
+        printf("
+===== 2D GRAPHICS EDITOR =====
+");
+        printf("1. Draw Line
+");
+        printf("2. Draw Rectangle
+");
+        printf("3. Draw Circle
+");
+        printf("4. Draw Triangle
+");
+        printf("5. Display Picture
+");
+        printf("6. Add Object
+");
+        printf("7. Delete Object
+");
+        printf("8. Modify Object
+");
+        printf("9. Clear Picture
+");
+        printf("0. Exit
+");
+        printf("Choice: ");
+
+        scanf("%d", &choice);
+
+        if(choice == 1) {
+
+            int x1,y1,x2,y2;
+
+            printf("Enter x1 y1 x2 y2: ");
+            scanf("%d%d%d%d",&x1,&y1,&x2,&y2);
+
+            drawLine(x1,y1,x2,y2);
+        }
+
+        else if(choice == 2) {
+
+            int x1,y1,x2,y2;
+
+            printf("Enter x1 y1 x2 y2: ");
+            scanf("%d%d%d%d",&x1,&y1,&x2,&y2);
+
+            drawRectangle(x1,y1,x2,y2);
+        }
+
+        else if(choice == 3) {
+
+            int cx,cy,r;
+
+            printf("Enter center x y radius: ");
+            scanf("%d%d%d",&cx,&cy,&r);
+
+            drawCircle(cx,cy,r);
+        }
+
+        else if(choice == 4) {
+
+            int x1,y1,x2,y2,x3,y3;
+
+            printf("Enter x1 y1 x2 y2 x3 y3: ");
+            scanf("%d%d%d%d%d%d",
+                  &x1,&y1,&x2,&y2,&x3,&y3);
+
+            drawTriangle(x1,y1,x2,y2,x3,y3);
+        }
+
+        else if(choice == 5) {
+
+            displayPicture();
+        }
+
+        else if(choice == 6) {
+
+            int x,y;
+            char ch;
+
+            printf("Enter x y symbol: ");
+            scanf("%d%d",&x,&y);
+            scanf(" %c",&ch);
+
+            addObject(x,y,ch);
+        }
+
+        else if(choice == 7) {
+
+            int x,y;
+
+            printf("Enter x y: ");
+            scanf("%d%d",&x,&y);
+
+            deleteObject(x,y);
+        }
+
+        else if(choice == 8) {
+
+            int x,y;
+            char ch;
+
+            printf("Enter x y newSymbol: ");
+            scanf("%d%d",&x,&y);
+            scanf(" %c",&ch);
+
+            modifyObject(x,y,ch);
+        }
+
+        else if(choice == 9) {
+
+            clearPicture();
+        }
+
+        else if(choice == 0) {
+
+            printf("Exiting...
+");
+            break;
+        }
+
+        else {
+
+            printf("Invalid choice!
+");
+        }
+    }
+
+    return 0;
+}
+
+Gemini:
+You actually got incredibly close! The overall structure of your program—including the menu, the pixel manipulation loops, and using the DDA algorithm for drawLine—is excellent.
+The issues you are seeing are caused by a few small typo-style bugs hidden inside your geometric math functions. Here is the breakdown of what went wrong and how to fix them.
+
+The Bugs Identified
+1. The Rectangle Bug (drawRectangle)
+The Issue: For the bottom line, you wrote drawLine(x2, y2 - 1, x1, y2 - 1);. Subtracting 1 from the Y coordinate shifts the bottom border up by one pixel, leaving the actual bottom open.
+The Fix: Change y2 - 1 to y2.
+
+2. The Circle Bug (drawCircle)
+The Issue: In the Y coordinate math, you used (radius - 1) * sin(rad). Because the X radius and Y radius don't match, your circle draws as an asymmetric, slightly flat ellipse.
+The Fix: Change radius - 1 to just radius.
+
+3. The Triangle Bug (drawTriangle)
+The Issue: Your third line connects back to (x2, y1). This is a mixed-up typo; it completely misses your original starting point. Your triangle won't close properly.
+The Fix: Change the endpoint parameters to x1, y1 so it closes the loop back to the first point.
+
+4. Line Drawing Precision (drawLine)
+The Issue: Casting a float directly to an int (int)x always truncates down toward zero. This can cause lines to look slightly distorted or drop pixels prematurely.
+The Fix: Use round(x) or add 0.5 before casting to keep the pixel mapping visually accurate.
+
+The Fully Fixed Code
+Here is your complete program with those exact math bugs ironed out:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define WIDTH 80
+#define HEIGHT 24
+
+#define EMPTY '_'
+#define PIXEL '*'
+
+char picture[HEIGHT][WIDTH];
+
+void clearPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            picture[i][j] = EMPTY;
+        }
+    }
+}
+
+void displayPicture() {
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            printf("%c", picture[i][j]);
+        }
+        printf("
+");
+    }
+}
+
+void setPixel(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = PIXEL;
+    }
+}
+
+void addObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void deleteObject(int x, int y) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = EMPTY;
+    }
+}
+
+void modifyObject(int x, int y, char symbol) {
+    if(x >= 0 && x < WIDTH &&
+       y >= 0 && y < HEIGHT) {
+        picture[y][x] = symbol;
+    }
+}
+
+void drawLine(int x1, int y1, int x2, int y2) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+
+    int steps = (dx > dy) ? dx : dy;
+
+    // Avoid division by zero if a single point is passed
+    if (steps == 0) {
+        setPixel(x1, y1);
+        return;
+    }
+
+    float xInc = (float)(x2 - x1) / steps;
+    float yInc = (float)(y2 - y1) / steps;
+
+    float x = x1;
+    float y = y1;
+
+    for(int i = 0; i <= steps; i++) {
+        // Adding 0.5f handles rounding properly instead of truncation
+        setPixel((int)(x + 0.5f), (int)(y + 0.5f));
+        x += xInc;
+        y += yInc;
+    }
+}
+
+void drawRectangle(int x1, int y1, int x2, int y2) {
+    drawLine(x1, y1, x2, y1); // Top
+    drawLine(x2, y1, x2, y2); // Right
+    drawLine(x2, y2, x1, y2); // Bottom (Fixed typo here)
+    drawLine(x1, y2, x1, y1); // Left
+}
+
+void drawCircle(int cx, int cy, int radius) {
+    // A smaller step interval (like 2) ensures no gaps appear in larger circles
+    for(int angle = 0; angle < 360; angle += 2) {
+        double rad = angle * 3.1415926535 / 180.0;
+
+        int x = (int)(cx + radius * cos(rad) + 0.5);
+        int y = (int)(cy + radius * sin(rad) + 0.5); // Fixed (radius - 1) asymmetry here
+
+        setPixel(x, y);
+    }
+}
+
+void drawTriangle(int x1, int y1,
+                  int x2, int y2,
+                  int x3, int y3) {
+    drawLine(x1, y1, x2, y2);
+    drawLine(x2, y2, x3, y3);
+    drawLine(x3, y3, x1, y1); // Fixed connection back to vertex 1 here
+}
+
+int main() {
+    int choice;
+    clearPicture();
+
+    while(1) {
+        printf("
+===== 2D GRAPHICS EDITOR =====
+");
+        printf("1. Draw Line
+");
+        printf("2. Draw Rectangle
+");
+        printf("3. Draw Circle
+");
+        printf("4. Draw Triangle
+");
+        printf("5. Display Picture
+");
+        printf("6. Add Object
+");
+        printf("7. Delete Object
+");
+        printf("8. Modify Object
+");
+        printf("9. Clear Picture
+");
+        printf("0. Exit
+");
+        printf("Choice: ");
+
+        if (scanf("%d", &choice) != 1) {
+            // Guard against infinite loop if user enters a non-integer letter
+            while (getchar() != '
+'); 
+            printf("Invalid input type!
+");
+            continue;
+        }
+
+        if(choice == 1) {
+            int x1, y1, x2, y2;
+            printf("Enter x1 y1 x2 y2: ");
+            scanf("%d%d%d%d", &x1, &y1, &x2, &y2);
+            drawLine(x1, y1, x2, y2);
+        }
+        else if(choice == 2) {
+            int x1, y1, x2, y2;
+            printf("Enter x1 y1 x2 y2: ");
+            scanf("%d%d%d%d", &x1, &y1, &x2, &y2);
+            drawRectangle(x1, y1, x2, y2);
+        }
+        else if(choice == 3) {
+            int cx, cy, r;
+            printf("Enter center x y radius: ");
+            scanf("%d%d%d", &cx, &cy, &r);
+            drawCircle(cx, cy, r);
+        }
+        else if(choice == 4) {
+            int x1, y1, x2, y2, x3, y3;
+            printf("Enter x1 y1 x2 y2 x3 y3: ");
+            scanf("%d%d%d%d%d%d", &x1, &y1, &x2, &y2, &x3, &y3);
+            drawTriangle(x1, y1, x2, y2, x3, y3);
+        }
+        else if(choice == 5) {
+            displayPicture();
+        }
+        else if(choice == 6) {
+            int x, y;
+            char ch;
+            printf("Enter x y symbol: ");
+            scanf("%d%d", &x, &y);
+            scanf(" %c", &ch);
+            addObject(x, y, ch);
+        }
+        else if(choice == 7) {
+            int x, y;
+            printf("Enter x y: ");
+            scanf("%d%d", &x, &y);
+            deleteObject(x, y);
+        }
+        else if(choice == 8) {
+            int x, y;
+            char ch;
+            printf("Enter x y newSymbol: ");
+            scanf("%d%d", &x, &y);
+            scanf(" %c", &ch);
+            modifyObject(x, y, ch);
+        }
+        else if(choice == 9) {
+            clearPicture();
+            printf("Canvas cleared.
+");
+        }
+        else if(choice == 0) {
+            printf("Exiting...
+");
+            break;
+        }
+        else {
+            printf("Invalid choice!
+");
+        }
+    }
+
+    return 0;
+}
