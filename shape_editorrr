@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define WIDTH 80
-#define HEIGHT 24
+#define HEIGHT 28
 
 #define EMPTY '_'
 #define PIXEL '*'
