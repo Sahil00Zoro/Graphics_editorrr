@@ -104,7 +104,7 @@ int main() {
 
     clearPicture();
 
-    printf("2D Graphics Editor\n");
+    printf("2D Graphics EEditor\n");
     printf("Canvas size: %d x %d\n", WIDTH, HEIGHT);
 
     while(1) {
